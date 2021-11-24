@@ -61,6 +61,35 @@ function autobind(
     return adjDescriptor
 }
 
+// ProjectList Class
+class ProjectList{
+    templateElement: HTMLTemplateElement
+    hostElement: HTMLDivElement
+    element: HTMLElement
+
+    constructor(private type: 'active' | 'finished'){   //constructorの引数にこれだけ入れるだけでプロパティを追加したことになる
+        this.templateElement = document.getElementById('project-list')! as HTMLTemplateElement
+        this.hostElement = document.getElementById('app')! as HTMLDivElement
+
+        const importedNode = document.importNode(this.templateElement.content, true)    //第2引数のtrue はdeepcloneするかどうか。 deepClone -> 子ノードまで取得する
+        
+        this.element = importedNode.firstElementChild as HTMLElement
+        this.element.id = `${this.type}-projects`
+        this.attach()
+        this.renderContent()
+    }
+
+    private renderContent(){
+        const listId = `${this.type}-project-list`
+        this.element.querySelector('ul')!.id = listId
+        this.element.querySelector('h2')!.textContent = this.type === 'active' ? '実行中プロジェクト' : '完了プロジェクト'
+    }
+
+    private attach(){
+        this.hostElement.insertAdjacentElement('beforeend', this.element)
+    }
+}
+
 //projectInputClass
 class ProjectInput {
     templateElement: HTMLTemplateElement
@@ -151,3 +180,5 @@ class ProjectInput {
 }
 
 const prjInput = new ProjectInput()
+const activeProjectList = new ProjectList('active')
+const finishedProjectList = new ProjectList('finished')
