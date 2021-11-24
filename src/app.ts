@@ -124,23 +124,54 @@ function autobind(
     return adjDescriptor
 }
 
-// ProjectList Class
-class ProjectList{
+//Component Class
+// 直接インスタンス化されるのではなく常に継承されて使用されるべきクラスなので抽象化 インスタンス化できない
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     templateElement: HTMLTemplateElement
-    hostElement: HTMLDivElement
-    element: HTMLElement
+    hostElement: T
+    element: U
+
+    constructor(
+        templateId: string, 
+        hostElementId: string, 
+        insertAtStart: boolean,
+        newElementId?: string,
+    ){
+        this.templateElement = document.getElementById(templateId)! as HTMLTemplateElement
+        this.hostElement = document.getElementById(hostElementId)! as T //T -> hostElement(append先要素)
+
+        const importedNode = document.importNode(this.templateElement.content, true)    //第2引数のtrue はdeepcloneするかどうか。 deepClone -> 子ノードまで取得する
+        this.element = importedNode.firstElementChild as U
+        // newElementIdは任意のパラメータなので条件分岐が必要
+        if(newElementId){           
+            this.element.id = newElementId
+        }
+        this.attach(insertAtStart)
+    }
+
+    private attach(insertAtBegining: boolean){
+        this.hostElement.insertAdjacentElement(insertAtBegining ? 'afterbegin' : 'beforeend', this.element)
+    }
+
+    //抽象メソッド: このクラスを継承して使用するクラスで下記2つのメソッドを使用することを強制する。
+    abstract configure(): void
+    abstract renderContent(): void
+}
+
+// ProjectList Class
+class ProjectList extends Component<HTMLDivElement, HTMLElement>{
     assignedProjects: Project[]
 
     constructor(private type: 'active' | 'finished'){   //constructorの引数にこれだけ入れるだけでプロパティを追加したことになる
-        this.templateElement = document.getElementById('project-list')! as HTMLTemplateElement
-        this.hostElement = document.getElementById('app')! as HTMLDivElement
+        super('project-list', 'app', false, `${type}-projects`) //ベースクラスのconstructorを呼びだす -> templateId: string, hostElementId: string, insertAtStart: boolean, newElementId?: stringを渡す
         this.assignedProjects = []
 
-        const importedNode = document.importNode(this.templateElement.content, true)    //第2引数のtrue はdeepcloneするかどうか。 deepClone -> 子ノードまで取得する
-        
-        this.element = importedNode.firstElementChild as HTMLElement
-        this.element.id = `${this.type}-projects`
+        this.configure()
+        this.renderContent()
+    }
 
+    // publicメソッドは一般的にprivateメソッドより上に定義する
+    configure(){
         projectState.addListener((projects: Project[]) => {
             const relevantProjects = projects.filter(prj => {
                 if (this.type === 'active'){
@@ -151,9 +182,12 @@ class ProjectList{
             this.assignedProjects = relevantProjects
             this.renderProjects()
         })
+    }
 
-        this.attach()
-        this.renderContent()
+     renderContent(){
+        const listId = `${this.type}-project-list`
+        this.element.querySelector('ul')!.id = listId
+        this.element.querySelector('h2')!.textContent = this.type === 'active' ? '実行中プロジェクト' : '完了プロジェクト'
     }
 
     private renderProjects(){
@@ -165,43 +199,32 @@ class ProjectList{
             listEl.appendChild(listItem)
         }
     }
-
-    private renderContent(){
-        const listId = `${this.type}-project-list`
-        this.element.querySelector('ul')!.id = listId
-        this.element.querySelector('h2')!.textContent = this.type === 'active' ? '実行中プロジェクト' : '完了プロジェクト'
-    }
-
-    private attach(){
-        this.hostElement.insertAdjacentElement('beforeend', this.element)
-    }
 }
 
 //projectInputClass
-class ProjectInput {
-    templateElement: HTMLTemplateElement
-    hostElement: HTMLDivElement
-    element: HTMLFormElement
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
     titleInputElement: HTMLInputElement
     descriptionInputElement: HTMLInputElement
     mandayInputElement: HTMLInputElement
 
     constructor(){
-        this.templateElement = document.getElementById('project-input')! as HTMLTemplateElement
-        this.hostElement = document.getElementById('app')! as HTMLDivElement
-
-        const importedNode = document.importNode(this.templateElement.content, true)    //第2引数のtrue はdeepcloneするかどうか。 deepClone -> 子ノードまで取得する
-        
-        this.element = importedNode.firstElementChild as HTMLFormElement
-        this.element.id = 'user-input'
+        super('project-input', 'app', true, 'user-input')
 
         this.titleInputElement = this.element.querySelector('#title') as HTMLInputElement
         this.descriptionInputElement = this.element.querySelector('#description') as HTMLInputElement
         this.mandayInputElement = this.element.querySelector('#manday') as HTMLInputElement
 
         this.configure()
-        this.attach()
     }
+
+    configure (){
+        this.element.addEventListener('submit', this.submitHandler)
+        // this.element.addEventListener('submit', this.submitHandler.bind(this)) 
+        //configureメソッドはconstructorから呼ばれる -> ここでのthisはクラスで作成されたインスタンス
+        //submitHandlerにこのthisをbindして渡す
+    }               
+    
+    renderContent(){}
 
     private gatherUserInput(): [string, string, number] | void{    //タプル型の返却値
         const enterdTitle = this.titleInputElement.value
@@ -252,18 +275,7 @@ class ProjectInput {
             projectState.addProject(title, desc, manday)
             this.clearInputs()
         }
-    }
-
-    private configure (){
-        this.element.addEventListener('submit', this.submitHandler)
-        // this.element.addEventListener('submit', this.submitHandler.bind(this)) 
-        //configureメソッドはconstructorから呼ばれる -> ここでのthisはクラスで作成されたインスタンス
-        //submitHandlerにこのthisをbindして渡す
-    }                                                                           
-
-    private attach(){
-        this.hostElement.insertAdjacentElement('afterbegin', this.element)
-    }
+    }                                                           
 }
 
 const prjInput = new ProjectInput()
