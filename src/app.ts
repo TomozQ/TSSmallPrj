@@ -15,15 +15,23 @@ class Project{
 }
 
 // Project State Management
-type Listener = (items: Project[]) => void
+type Listener<T> = (items: T[]) => void
 
-class ProjectState{
-    private listeners: Listener[] = []
-    private projects: Project[] = []
+class State<T> {
+    private listeners: Listener<T>[] = []
+
+    addListener(listenerFn: Listener<T>){
+        this.listeners.push(listenerFn)
+    }
+
+}
+
+class ProjectState extends State<Project>{
+    protected projects: Project[] = []  //protectedは継承先のクラスからでもアクセスできる classの外部からはアクセスできない
     private static instance: ProjectState
 
     private constructor() { //シングルトンなクラス
-
+        super()
     }
 
     static getInstance(){
@@ -32,10 +40,6 @@ class ProjectState{
         }
         this.instance = new ProjectState()
         return this.instance
-    }
-
-    addListener(listenerFn: Listener){
-        this.listeners.push(listenerFn)
     }
 
     addProject(title: string, description: string, manday: number){
