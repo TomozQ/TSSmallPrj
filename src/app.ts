@@ -18,7 +18,7 @@ class Project{
 type Listener<T> = (items: T[]) => void
 
 class State<T> {
-    private listeners: Listener<T>[] = []
+    protected listeners: Listener<T>[] = [] //protectedは継承先のクラスからでもアクセスできる classの外部からはアクセスできない
 
     addListener(listenerFn: Listener<T>){
         this.listeners.push(listenerFn)
@@ -27,7 +27,7 @@ class State<T> {
 }
 
 class ProjectState extends State<Project>{
-    protected projects: Project[] = []  //protectedは継承先のクラスからでもアクセスできる classの外部からはアクセスできない
+    private projects: Project[] = []  
     private static instance: ProjectState
 
     private constructor() { //シングルトンなクラス
