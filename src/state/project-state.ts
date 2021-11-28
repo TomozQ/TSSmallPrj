@@ -62,3 +62,5 @@ export class ProjectState extends State<Project>{
 }
 
 export const projectState = ProjectState.getInstance() //グローバルなプロジェクトステート
+
+//projectStateは複数ファイルでimportされているが、最初にimportされた時の1回だけ実行される。
