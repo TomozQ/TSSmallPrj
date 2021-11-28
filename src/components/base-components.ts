@@ -1,6 +1,7 @@
     //Component Class
+export const something = '...'
 // 直接インスタンス化されるのではなく常に継承されて使用されるべきクラスなので抽象化 インスタンス化できない
-export abstract class Component<T extends HTMLElement, U extends HTMLElement> {
+export default abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     templateElement: HTMLTemplateElement
     hostElement: T
     element: U

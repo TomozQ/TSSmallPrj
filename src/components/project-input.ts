@@ -1,10 +1,10 @@
-import { Component  } from "./base-components.js"
-import { Validatable, validate } from "../util/validation.js"
-import { autobind } from "../decorators/autobind.js"
+import Cmp from "./base-components.js"
+import * as Validation from "../util/validation.js"
+import { autobind as Autobind } from "../decorators/autobind.js"
 import { projectState } from "../state/project-state.js"
 
-    //projectInputClass
-export class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
+//projectInputClass
+export class ProjectInput extends Cmp<HTMLDivElement, HTMLFormElement>{
     titleInputElement: HTMLInputElement
     descriptionInputElement: HTMLInputElement
     mandayInputElement: HTMLInputElement
@@ -34,25 +34,25 @@ export class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
         const enterdmanday = this.mandayInputElement.value
 
 
-        const titelValidatable: Validatable = {
+        const titelValidatable: Validation.Validatable = {
             value: enterdTitle,
             required: true
         }
-        const descriptionValidatable: Validatable = {
+        const descriptionValidatable: Validation.Validatable = {
             value: enterddescription,
             required: true,
             minLength: 5
         }
-        const mandayValidatable: Validatable = {
+        const mandayValidatable:Validation. Validatable = {
             value: +enterdmanday,
             required: true,
             min: 1,
             max: 1000
         }
         if(
-            !validate(titelValidatable) ||
-            !validate(descriptionValidatable) ||
-            !validate(mandayValidatable)
+            !Validation.validate(titelValidatable) ||
+            !Validation.validate(descriptionValidatable) ||
+            !Validation.validate(mandayValidatable)
         ) {
             alert('入力値が正しくありません。再度お試しください。')
             return
@@ -67,7 +67,7 @@ export class ProjectInput extends Component<HTMLDivElement, HTMLFormElement>{
         this.mandayInputElement.value = ''
     }
 
-    @autobind
+    @Autobind
     private submitHandler(event: Event){
         event.preventDefault()
         console.log(this.titleInputElement.value)

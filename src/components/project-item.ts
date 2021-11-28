@@ -1,5 +1,5 @@
 import { Draggable } from '../models/drag-drop.js' //拡張子はjs
-import { Component } from './base-components.js'
+import Component from './base-components.js'
 import { Project } from '../models/project.js'
 import { autobind } from '../decorators/autobind.js'
 

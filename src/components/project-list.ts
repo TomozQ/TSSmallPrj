@@ -1,6 +1,6 @@
 import { DragTarget } from "../models/drag-drop.js"
 import { Project } from "../models/project.js"
-import { Component } from "./base-components.js"
+import Component from "./base-components.js"
 import { autobind } from "../decorators/autobind.js"
 import { projectState } from "../state/project-state.js"
 import { ProjectStatus } from "../models/project.js"
