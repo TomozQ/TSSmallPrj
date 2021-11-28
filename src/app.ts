@@ -1,3 +1,15 @@
+// Drag & Drop
+interface Draggable{
+    dragStartHandler(event: DragEvent): void
+    dragEndHandler(evnet: DragEvent): void
+}
+
+interface DragTarget{
+    dragOverHandler(event: DragEvent): void   //その場所が有効なドロップ対象かを伝える
+    dropHandler(event: DragEvent): void       //実際にドロップが行われたときの処理
+    dragLeaveHandler(event: DragEvent): void  //ビジュアル上のフィードバックを作成する。
+}
+
 //Project type
 enum ProjectStatus {
     Active, Finished
@@ -57,6 +69,18 @@ class ProjectState extends State<Project>{
             ProjectStatus.Active,       //project status 追加時デフォルトはacive
         )
         this.projects.push(newProject)
+        this.updateListners()
+    }
+
+    moveProject(projectId: string, newStatus: ProjectStatus){
+        const project = this.projects.find(prj => prj.id === projectId)
+        if(project && project.status !== newStatus){
+            project.status = newStatus
+            this.updateListners()
+        }
+    }
+
+    private updateListners(){
         for (const listenerFn of this.listeners) {
             listenerFn(this.projects.slice())
         }
@@ -163,7 +187,8 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 }
 
 //projectItem class
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> 
+    implements Draggable{
     private project: Project
 
     get manday() {
@@ -181,7 +206,21 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
         this.renderContent()
     }
 
-    configure(){}
+    @autobind
+    dragStartHandler(event: DragEvent){
+        event.dataTransfer!.setData('text/plain', this.project.id)  //dataTransfer -> drageventオブジェクトだけに存在するdataを転送するためのプロパティ
+        event.dataTransfer!.effectAllowed = 'move'                  //ブラウザ上でカーソルがどのように表示されるかを指定
+    }
+
+    dragEndHandler(_: DragEvent){
+        console.log('drag終了')
+    }
+
+    configure(){
+        this.element.addEventListener('dragstart', this.dragStartHandler)
+        this.element.addEventListener('dragend', this.dragEndHandler)
+    }
+
     renderContent(){
         this.element.querySelector('h2')!.textContent = this.project.title
         this.element.querySelector('h3')!.textContent = this.manday  //getter関数はプロパティのようにアクセスする
@@ -190,7 +229,8 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
 }
 
 // ProjectList Class
-class ProjectList extends Component<HTMLDivElement, HTMLElement>{
+class ProjectList extends Component<HTMLDivElement, HTMLElement> 
+    implements DragTarget{
     assignedProjects: Project[]
 
     constructor(private type: 'active' | 'finished'){   //constructorの引数にこれだけ入れるだけでプロパティを追加したことになる
@@ -201,8 +241,34 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
         this.renderContent()
     }
 
+    @autobind
+    dragOverHandler(event: DragEvent){
+        if(event.dataTransfer && event.dataTransfer.types[0] === 'text/plain'){
+            // drag & dropだけが許可されるという動作になる　dragoverhandlerでpreventDefaultが呼び出された要素にだけdropHandlerが呼びだされる
+            event.preventDefault()
+            const listEl = this.element.querySelector('ul')!
+            listEl.classList.add('droppable')
+        }
+    }
+
+    @autobind
+    dropHandler(event: DragEvent){
+        const prjId = event.dataTransfer!.getData('text/plain')
+        projectState.moveProject(prjId, this.type === 'active' ? ProjectStatus.Active : ProjectStatus.Finished)
+    }
+
+    @autobind
+    dragLeaveHandler(_: DragEvent){
+        const listEl = this.element.querySelector('ul')!
+        listEl.classList.remove('droppable')
+    }
+
     // publicメソッドは一般的にprivateメソッドより上に定義する
     configure(){
+        this.element.addEventListener('dragover', this.dragOverHandler)
+        this.element.addEventListener('drop', this.dropHandler)
+        this.element.addEventListener('dragleave', this.dragLeaveHandler)
+
         projectState.addListener((projects: Project[]) => {
             const relevantProjects = projects.filter(prj => {
                 if (this.type === 'active'){
